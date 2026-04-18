@@ -70,3 +70,18 @@ def test_raises_for_missing_directory(tmp_path: Path) -> None:
 def test_empty_directory(tmp_path: Path) -> None:
     result = find_dependency_files([tmp_path])
     assert result[str(tmp_path)] == []
+
+
+def test_multiple_directories(tmp_path: Path) -> None:
+    """Each directory is keyed separately in the result."""
+    dir_a = tmp_path / "project_a"
+    dir_b = tmp_path / "project_b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+    (dir_a / "requirements.txt").write_text("requests==2.31.0\n")
+    (dir_b / "pyproject.toml").write_text("[project]\nname = 'b'\n")
+
+    result = find_dependency_files([dir_a, dir_b])
+
+    assert "requirements.txt" in [p.name for p in result[str(dir_a)]]
+    assert "pyproject.toml" in [p.name for p in result[str(dir_b)]]
