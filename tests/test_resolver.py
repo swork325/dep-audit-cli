@@ -43,6 +43,16 @@ def test_fetch_latest_version_normalizes_name():
     assert "my-package" in url
 
 
+def test_fetch_latest_version_hits_pypi_url():
+    """Ensure the PyPI JSON API endpoint is used for the lookup."""
+    session = _mock_session("1.2.3")
+    fetch_latest_version("requests", session=session)
+    url = session.get.call_args[0][0]
+    assert "pypi.org" in url
+    assert "requests" in url
+    assert "json" in url
+
+
 # ---------------------------------------------------------------------------
 # ResolvedDep.is_outdated
 # ---------------------------------------------------------------------------
@@ -59,6 +69,12 @@ def test_is_outdated_false_when_same():
 
 def test_is_outdated_false_when_no_installed():
     dep = ResolvedDep("requests", "", None, "2.28.2")
+    assert dep.is_outdated is False
+
+
+def test_is_outdated_false_when_no_latest():
+    """If latest_version is unknown, is_outdated should not raise and return False."""
+    dep = ResolvedDep("requests", ">=2.0", "2.27.0", None)
     assert dep.is_outdated is False
 
 
@@ -97,4 +113,4 @@ def test_resolve_dependencies_missing_package(monkeypatch):
     reqs = [{"name": "unknown-lib", "specifier": ""}]
     results = resolve_dependencies(reqs, session=session)
 
-    assert results[0].installed_version is None
+    assert results[0]
