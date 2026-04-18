@@ -61,6 +61,18 @@ def test_sort_by_file_orders_files(report):
     assert paths == sorted(paths, key=str.lower)
 
 
+def test_sort_does_not_mutate_original(report):
+    """sort_report should return a new report and not modify the original."""
+    original_paths = [str(f.path) for f in report.files]
+    original_deps = {str(f.path): [d.name for d in f.deps] for f in report.files}
+
+    sort_report(report, SortConfig(key="file"))
+
+    assert [str(f.path) for f in report.files] == original_paths
+    for f in report.files:
+        assert [d.name for d in f.deps] == original_deps[str(f.path)]
+
+
 def _parse(args):
     parser = argparse.ArgumentParser()
     add_sort_args(parser)
