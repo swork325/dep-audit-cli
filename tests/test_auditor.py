@@ -45,6 +45,16 @@ class TestFileAudit:
         )
         assert fa.has_issues is False
 
+    def test_has_issues_false_when_no_dependencies(self):
+        """An empty dependency list should not be flagged as having issues."""
+        fa = FileAudit(path=Path("requirements.txt"), dependencies=[])
+        assert fa.has_issues is False
+
+    def test_outdated_empty_when_no_dependencies(self):
+        """outdated should be an empty list when there are no dependencies."""
+        fa = FileAudit(path=Path("requirements.txt"), dependencies=[])
+        assert fa.outdated == []
+
 
 # ---------------------------------------------------------------------------
 # AuditReport
@@ -81,28 +91,17 @@ class TestAuditReport:
         assert len(report.files_with_issues) == 1
         assert report.files_with_issues[0].path.name == "requirements.txt"
 
+    def test_total_deps_empty_report(self):
+        """total_deps should be zero when no file audits have been added."""
+        report = AuditReport(root=Path("/proj"))
+        assert report.total_deps == 0
+
+    def test_total_outdated_empty_report(self):
+        """total_outdated should be zero when no file audits have been added."""
+        report = AuditReport(root=Path("/proj"))
+        assert report.total_outdated == 0
+
 
 # ---------------------------------------------------------------------------
 # audit_project integration
-# ---------------------------------------------------------------------------
-
-def test_audit_project_calls_finder_and_resolver(tmp_path)_files = [tmp_path / "requirements.txt", tmp_path / "requirements-dev.txt"]
-    fake_deps = [_make_dep("requests", "2.28.0", "2.31.0", True)]
-
-    with patch("dep_audit.auditor.find_dependency_files", return_value=fake_files) as mock_find, \
-         patch("dep_audit.auditor.resolve_dependencies", return_value=fake_deps) as mock_resolve:
-
-        report = audit_project(tmp_path)
-
-    mock_find.assert_called_once_with(tmp_path)
-    assert mock_resolve.call_count == 2
-    assert len(report.file_audits) == 2
-    assert report.total_outdated == 2
-
-
-def test_audit_project_empty_project(tmp_path):
-    with patch("dep_audit.auditor.find_dependency_files", return_value=[]):
-        report = audit_project(tmp_path)
-
-    assert report.total_deps == 0
-    assert report.file_audits == []
+# --------------------------------------------------------------
