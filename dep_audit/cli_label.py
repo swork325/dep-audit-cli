@@ -37,7 +37,11 @@ def maybe_print_labels(
     """If --show-labels is set, print label -> dep summary to stdout."""
     if not getattr(args, "show_labels", False):
         return
-    label_map = load_label_map(Path(args.label_map))
+    label_map_path = Path(args.label_map)
+    if not label_map_path.exists():
+        print(f"Warning: label map file '{label_map_path}' not found; skipping label summary.")
+        return
+    label_map = load_label_map(label_map_path)
     grouped = label_report(report, label_map)
     if not grouped:
         print("No labels matched any dependencies.")
@@ -54,5 +58,11 @@ def apply_label_filter(
     label = getattr(args, "filter_label", None)
     if not label:
         return None
-    label_map = load_label_map(Path(args.label_map))
+    label_map_path = Path(args.label_map)
+    if not label_map_path.exists():
+        raise FileNotFoundError(
+            f"Label map file '{label_map_path}' not found. "
+            "Provide a valid path via --label-map."
+        )
+    label_map = load_label_map(label_map_path)
     return filter_by_label(report, label, label_map)
