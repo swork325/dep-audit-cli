@@ -26,6 +26,7 @@ class ResolvedDep:
 
 
 def _normalize(name: str) -> str:
+    """Normalize a package name per PEP 503 (replace runs of [-_.] with '-' and lowercase)."""
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
@@ -36,6 +37,11 @@ def fetch_latest_version(package: str, session: Optional[requests.Session] = Non
         resp = client.get(PYPI_URL.format(package=_normalize(package)), timeout=5)
         resp.raise_for_status()
         return resp.json()["info"]["version"]
+    except requests.HTTPError as exc:
+        # Surface 404s distinctly so callers can tell apart "not found" from network errors.
+        if exc.response is not None and exc.response.status_code == 404:
+            return None
+        return None
     except Exception:
         return None
 
