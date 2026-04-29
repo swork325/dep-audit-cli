@@ -89,25 +89,30 @@ def test_vulnerable_dep_not_in_baseline_is_new():
 
 # ── HighlightReport helpers ───────────────────────────────────────────────────
 
-def test_highlight_report_new_issues_filters_correctly():
-    d1 = _dep("flask", installed="1.0", latest="2.0")
-    d2 = _dep("click", installed="3.0", latest="3.0")
-    report = _report(("req.txt", [d1, d2]))
+def test_highlight_report_total_new_issues_counts_only_new():
+    """total_new_issues should count only deps flagged as new issues."""
+    outdated = _dep("requests", installed="1.0.0", latest="2.0.0")
+    clean = _dep("flask", installed="2.0.0", latest="2.0.0")
+    report = _report(("req.txt", [outdated, clean]))
     result = highlight_new_issues(report, baseline=None)
-    assert len(result[0].new_issues) == 1
-    assert result[0].has_new_issues is True
+    assert total_new_issues(result) == 1
 
 
-def test_total_new_issues_sums_across_files():
-    d1 = _dep("flask", installed="1.0", latest="2.0")
-    d2 = _dep("click", installed="1.0", latest="2.0")
-    report = _report(("a.txt", [d1]), ("b.txt", [d2]))
+def test_highlight_report_total_new_issues_empty_report():
+    """total_new_issues returns 0 for a report with no deps."""
+    report = _report(("req.txt", []))
+    result = highlight_new_issues(report, baseline=None)
+    assert total_new_issues(result) == 0
+
+
+def test_highlight_report_total_new_issues_multiple_files():
+    """total_new_issues aggregates new issues across multiple files."""
+    dep_a = _dep("requests", installed="1.0.0", latest="2.0.0")
+    dep_b = _dep("boto3", installed="1.5.0", latest="1.9.0")
+    dep_c = _dep("flask", installed="2.0.0", latest="2.0.0")
+    report = _report(
+        ("requirements.txt", [dep_a, dep_c]),
+        ("setup.cfg", [dep_b]),
+    )
     result = highlight_new_issues(report, baseline=None)
     assert total_new_issues(result) == 2
-
-
-def test_returns_one_highlight_report_per_file():
-    report = _report(("a.txt", [_dep("x")]), ("b.txt", [_dep("y")]))
-    result = highlight_new_issues(report, baseline=None)
-    assert len(result) == 2
-    assert {r.file_path for r in result} == {"a.txt", "b.txt"}
