@@ -48,12 +48,20 @@ class MetaReport:
     def with_home_page(self) -> List[PackageMeta]:
         return [e for e in self.entries if e.home_page]
 
+    def missing_home_page(self) -> List[PackageMeta]:
+        """Return entries that have no home page URL recorded."""
+        return [e for e in self.entries if not e.home_page]
+
 
 def fetch_meta(
     dep: ResolvedDep,
     session: Optional[requests.Session] = None,
 ) -> Optional[PackageMeta]:
-    """Fetch metadata for a single resolved dependency from PyPI."""
+    """Fetch metadata for a single resolved dependency from PyPI.
+
+    Returns ``None`` if no version can be determined, the PyPI request fails,
+    or the response cannot be parsed.
+    """
     s = session or requests.Session()
     version = dep.pinned or dep.latest
     if not version:
